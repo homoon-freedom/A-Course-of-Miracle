@@ -2,239 +2,251 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>와이드 메모장 (저장 기능 추가)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A Course of Miracle</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/311/311022.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <style>
+        :root { --primary-color: #4CAF50; --accent-color: #9C27B0; --gray-color: #607D8B; --danger-color: #f44336; }
         body { 
-            font-family: 'Noto Sans KR', sans-serif; 
-            background-color: #f4f4f9; 
-            padding: 20px; 
-            margin: 0;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            font-size: 0.9rem; 
+            font-family: 'Noto Sans KR', sans-serif; background-color: #f4f4f9; 
+            padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; font-size: 0.9rem; 
         }
+        .container { width: 100%; max-width: 600px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { text-align: center; color: #222; margin-top: 10px; }
+        h3 { font-size: 1rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; margin-bottom: 15px; margin-top: 0; }
         
-        .container { width: 100%; box-sizing: border-box; max-width: 800px; }
-        
-        .card { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            margin-bottom: 20px; 
-        }
-        
-        h2 { text-align: center; color: #222; margin-bottom: 20px; font-weight: 700; font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #444; border-bottom: 2px solid #4CAF50; padding-bottom: 8px; font-size: 1rem; font-weight: 500; margin-bottom: 15px; }
-        
-        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .input-row input[type="text"] { flex: 6; margin-bottom: 0; } 
-        .input-row input[type="date"] { flex: 1; min-width: 140px; margin-bottom: 0; }
-
-        input, textarea { 
-            font-family: 'Noto Sans KR', sans-serif;
-            width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; outline: none; transition: border 0.3s;
-        }
-        input:focus, textarea:focus { border-color: #4CAF50; }
-        
-        textarea { resize: none; overflow-y: hidden; min-height: 100px; margin-bottom: 10px; line-height: 1.5; }
-
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        
-        button { 
-            font-family: 'Noto Sans KR', sans-serif;
-            width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: 0.3s;
-        }
-        .btn-add { background-color: #4CAF50; color: white; margin-top: 5px; }
-        
-        .btn-toggle-filter { background-color: #607D8B; color: white; margin-bottom: 15px; width: auto; padding: 8px 20px; font-size: 0.85rem; }
-        
-        #filter-area { 
-            display: none; 
-            background-color: #eef2f3; 
-            border: 1px dashed #90a4ae;
+        #alarm-settings { display: none; }
+        .btn-toggle-settings { 
+            background-color: var(--gray-color); color: white; width: 100%; padding: 10px; 
+            margin-bottom: 15px; font-size: 0.85rem; border-radius: 8px;
         }
 
-        .memo-item { 
-            background: #fffbe6; 
-            padding: 20px; 
-            border-left: 6px solid #ffc107; 
-            margin-bottom: 15px; 
-            border-radius: 8px; 
-            position: relative; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-        }
-        .btn-group { position: absolute; top: 15px; right: 15px; display: flex; gap: 5px; }
-        .edit-btn { width: auto; padding: 4px 10px; background: #2196F3; color: white; font-size: 0.8rem; border-radius: 4px; }
-        .del-btn { width: auto; padding: 4px 10px; background: #f44336; color: white; font-size: 0.8rem; border-radius: 4px; }
+        .setting-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .setting-row label { font-weight: 500; min-width: 60px; }
+        .setting-row input, .setting-row select { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
+
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; margin-bottom: 10px; }
+        textarea { min-height: 100px; line-height: 1.5; resize: none; }
         
-        h4 { margin: 0 0 5px 0; color: #111; font-weight: 700; font-size: 1.1rem; }
-        small { color: #888; font-size: 0.85rem; }
-        p { margin-top: 12px; font-weight: 400; color: #333; font-size: 0.95rem; line-height: 1.6; }
+        button { font-family: inherit; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .btn-add { background-color: var(--primary-color); color: white; padding: 12px; width: 100%; font-size: 1rem; }
+        
+        /* 알림 실행 버튼 스타일 */
+        .btn-run-alarm { background-color: var(--accent-color); color: white; padding: 10px; width: 100%; margin-top: 10px; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-run-alarm.active { background-color: var(--danger-color); }
+
+        .memo-item { background: #fffbe6; padding: 18px; border-left: 6px solid #ffc107; margin-bottom: 15px; border-radius: 8px; position: relative; }
+        .btn-group { position: absolute; top: 12px; right: 12px; display: flex; gap: 5px; }
+        .btn-sm { padding: 5px 10px; font-size: 0.75rem; color: white; border-radius: 4px; }
+        .del-btn { background: var(--danger-color); }
+        
+        /* 알림 가동 중 뱃지 */
+        .running-badge { display: inline-block; background: #e1bee7; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; margin-bottom: 8px; font-weight: bold; animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        #permission-banner { display: none; background: #333; color: white; padding: 10px; width: 100%; text-align: center; position: fixed; top: 0; left: 0; z-index: 100; }
     </style>
 </head>
 <body>
 
+<div id="permission-banner" onclick="requestPermission()">
+    📍 아이폰 잠금화면 알림을 위해 여기를 눌러 권한을 허용하세요.
+</div>
+
 <div class="container">
-    <h2>A Course of Miracle</h2>
+    <h2>✨ A Course of Miracle</h2>
 
-    <div style="text-align: center;">
-        <button class="btn-toggle-filter" id="toggle-btn" onclick="toggleFilter()">
-            🔍 메모 검색/필터 열기
-        </button>
-    </div>
+    <button class="btn-toggle-settings" id="toggle-btn" onclick="toggleSettings()">
+        ⚙️ 알림 주기/시간 설정 열기
+    </button>
 
-    <div id="filter-area" class="card">
-        <h3>🔍 메모 찾기</h3>
-        <input type="text" id="search-title" placeholder="검색할 제목..." onkeyup="renderMemos()">
-        <div class="row">
-            <input type="date" id="start-date" onchange="renderMemos()">
-            <input type="date" id="end-date" onchange="renderMemos()">
+    <div id="alarm-settings" class="card">
+        <h3>🔔 알림 주기 설정</h3>
+        <div class="setting-row">
+            <label>시작</label>
+            <input type="time" id="start-time" value="08:00">
+            <label>종료</label>
+            <input type="time" id="end-time" value="22:00">
         </div>
-        <button style="background:#f44336; color:white;" onclick="resetFilter()">필터 초기화 및 닫기</button>
+        <div class="setting-row">
+            <label>간격</label>
+            <select id="interval-mins">
+                <option value="15">15분 마다</option>
+                <option value="30">30분 마다</option>
+                <option value="60" selected>1시간 마다</option>
+                <option value="120">2시간 마다</option>
+            </select>
+        </div>
     </div>
 
     <div class="card">
-        <h3>오늘의 연습서</h3>
-        <div class="input-row">
-            <input type="text" id="title" placeholder="제목">
-            <input type="date" id="date">
-        </div>
-        <textarea id="content" placeholder="내용을 입력하세요..." oninput="autoResize(this)"></textarea>
-        <button class="btn-add" onclick="addMemo()">메모 추가하기</button>
+        <h3>✍️ 오늘의 연습서</h3>
+        <input type="text" id="title" placeholder="제목 (예: 제 1과)">
+        <textarea id="content" placeholder="기억할 문장을 입력하세요..."></textarea>
+        <button class="btn-add" onclick="addMemo()">연습서 등록</button>
+        
+        <button id="run-alarm-btn" class="btn-run-alarm" onclick="toggleAlarmRunning()">
+            <span>🔔 알림 실행하기</span>
+        </button>
     </div>
 
     <div id="memo-list"></div>
 </div>
 
 <script>
-    // 1. 초기 데이터 로드
     let memoData = JSON.parse(localStorage.getItem('memos')) || [];
-    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+    let isAlarmRunning = JSON.parse(localStorage.getItem('isAlarmRunning')) || false;
+    let lastNotifiedTime = null;
 
-    // 초기 실행 시 화면 그리기
     window.onload = () => {
+        if (Notification.permission !== "granted") {
+            document.getElementById('permission-banner').style.display = 'block';
+        }
+        updateAlarmBtnUI();
         renderMemos();
+        setInterval(checkAlarmSystem, 30000); 
     };
 
-    function autoResize(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-    }
-
-    function toggleFilter() {
-        const filterArea = document.getElementById('filter-area');
-        const toggleBtn = document.getElementById('toggle-btn');
-        const isHidden = window.getComputedStyle(filterArea).display === 'none';
-        
-        filterArea.style.display = isHidden ? 'block' : 'none';
-        toggleBtn.innerText = isHidden ? '🔼 필터 메뉴 닫기' : '🔍 메모 검색/필터 열기';
-    }
-
-    // 2. 메모 추가 기능 (데이터 중심)
-    function addMemo() {
-        const titleInput = document.getElementById('title');
-        const dateInput = document.getElementById('date');
-        const contentInput = document.getElementById('content');
-
-        if (!titleInput.value || !contentInput.value) {
-            alert("제목과 내용을 입력해주세요!"); return;
+    function toggleSettings() {
+        const settings = document.getElementById('alarm-settings');
+        const btn = document.getElementById('toggle-btn');
+        if (settings.style.display === 'none' || settings.style.display === '') {
+            settings.style.display = 'block';
+            btn.innerText = '🔼 설정 닫기';
+        } else {
+            settings.style.display = 'none';
+            btn.innerText = '⚙️ 알림 주기/시간 설정 열기';
         }
+    }
+
+    function toggleAlarmRunning() {
+        if (memoData.length === 0) {
+            alert("먼저 연습서를 등록해주세요.");
+            return;
+        }
+        isAlarmRunning = !isAlarmRunning;
+        localStorage.setItem('isAlarmRunning', isAlarmRunning);
+        updateAlarmBtnUI();
+        
+        if(isAlarmRunning) {
+            alert("알림 시스템이 가동되었습니다. 지정된 시간에 첫 번째 메모가 발송됩니다.");
+        }
+    }
+
+    function updateAlarmBtnUI() {
+        const btn = document.getElementById('run-alarm-btn');
+        if (isAlarmRunning) {
+            btn.classList.add('active');
+            btn.innerHTML = '<span>📴 알림 중지하기</span>';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '<span>🔔 알림 실행하기</span>';
+        }
+        renderMemos(); // 리스트에 뱃지 표시 업데이트
+    }
+
+    function addMemo() {
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        if (!title || !content) return alert("내용을 입력하세요.");
 
         const newMemo = {
-            id: Date.now(), // 고유 ID 부여
-            title: titleInput.value,
-            date: dateInput.value,
-            content: contentInput.value
+            id: Date.now(),
+            title,
+            content,
+            date: new Date().toLocaleDateString()
         };
-
-        memoData.unshift(newMemo); // 배열 앞에 추가
+        memoData.unshift(newMemo);
         saveAndRender();
-
-        // 입력창 초기화
-        titleInput.value = '';
-        contentInput.value = '';
-        autoResize(contentInput);
+        document.getElementById('title').value = '';
+        document.getElementById('content').value = '';
     }
 
-    // 3. 화면 그리기 기능 (필터링 포함)
+    function checkAlarmSystem() {
+        // 알림 실행 상태일 때만 작동
+        if (!isAlarmRunning || memoData.length === 0 || Notification.permission !== "granted") return;
+
+        const now = new Date();
+        const curTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const startTime = document.getElementById('start-time').value;
+        const endTime = document.getElementById('end-time').value;
+        const interval = parseInt(document.getElementById('interval-mins').value);
+
+        if (curTimeStr < startTime || curTimeStr > endTime) return;
+
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        if (currentMinutes % interval === 0 && lastNotifiedTime !== currentMinutes) {
+            sendNotification(memoData[0]); 
+            lastNotifiedTime = currentMinutes;
+        }
+    }
+
+    function sendNotification(memo) {
+        new Notification(`[기적 연습] ${memo.title}`, {
+            body: memo.content,
+            icon: "https://cdn-icons-png.flaticon.com/512/311/311022.png"
+        });
+    }
+
     function renderMemos() {
         const list = document.getElementById('memo-list');
-        const searchTitle = document.getElementById('search-title').value.toLowerCase();
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
-
-        list.innerHTML = ''; // 리스트 초기화
-
-        const filtered = memoData.filter(memo => {
-            const matchesTitle = memo.title.toLowerCase().includes(searchTitle);
-            const matchesStart = !startDate || memo.date >= startDate;
-            const matchesEnd = !endDate || memo.date <= endDate;
-            return matchesTitle && matchesStart && matchesEnd;
-        });
-
-        filtered.forEach(memo => {
+        list.innerHTML = '';
+        memoData.forEach((memo, index) => {
             const memoDiv = document.createElement('div');
             memoDiv.className = 'memo-item';
+            
+            // 첫 번째 메모이면서 알림이 가동 중일 때 뱃지 추가
+            const badge = (index === 0 && isAlarmRunning) ? '<span class="running-badge">📡 알림 가동 중</span><br>' : '';
+            
             memoDiv.innerHTML = `
                 <div class="btn-group">
-                    <button class="edit-btn" onclick="editMemo(${memo.id})">수정</button>
-                    <button class="del-btn" onclick="deleteMemo(${memo.id})">삭제</button>
+                    <button class="btn-sm del-btn" onclick="deleteMemo(${memo.id})">삭제</button>
                 </div>
+                ${badge}
                 <h4>${memo.title}</h4>
-                <small>📅 ${memo.date}</small>
                 <p style="white-space:pre-wrap;">${memo.content}</p>
+                <small>${memo.date}</small>
             `;
             list.appendChild(memoDiv);
         });
     }
 
-    // 4. 저장 및 동기화
     function saveAndRender() {
         localStorage.setItem('memos', JSON.stringify(memoData));
         renderMemos();
     }
 
-    // 5. 삭제 기능
     function deleteMemo(id) {
-        if(confirm("이 메모를 삭제하시겠습니까?")) {
+        if(confirm("삭제할까요?")) {
             memoData = memoData.filter(m => m.id !== id);
+            if(memoData.length === 0) {
+                isAlarmRunning = false;
+                localStorage.setItem('isAlarmRunning', false);
+                updateAlarmBtnUI();
+            }
             saveAndRender();
         }
     }
 
-    // 6. 수정 기능
-    function editMemo(id) {
-        const target = memoData.find(m => m.id === id);
-        if(!target) return;
-
-        document.getElementById('title').value = target.title;
-        document.getElementById('date').value = target.date;
-        const contentArea = document.getElementById('content');
-        contentArea.value = target.content;
-        
-        autoResize(contentArea);
-        
-        // 기존 데이터 삭제 후 상단으로 이동 (수정 모드 진입 효과)
-        memoData = memoData.filter(m => m.id !== id);
-        saveAndRender();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function resetFilter() {
-        document.getElementById('search-title').value = '';
-        document.getElementById('start-date').value = '';
-        document.getElementById('end-date').value = '';
-        renderMemos();
-        toggleFilter();
+    function requestPermission() {
+        Notification.requestPermission().then(p => {
+            if (p === "granted") {
+                document.getElementById('permission-banner').style.display = 'none';
+                new Notification("알림 승인됨", { body: "이제 지정된 간격으로 알림이 전송됩니다." });
+            }
+        });
     }
 </script>
-
 </body>
 </html>
