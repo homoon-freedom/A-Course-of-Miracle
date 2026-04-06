@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>와이드 메모장</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: #f4f4f9; 
+            padding: 20px; 
+            margin: 0;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            /* 기본 폰트 크기 소폭 축소 */
+            font-size: 0.9rem; 
+        }
+        
+        .container { 
+            width: 100%; 
+            box-sizing: border-box;
+        }
+        
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            margin-bottom: 20px; 
+        }
+        
+        h2 { text-align: center; color: #222; margin-bottom: 20px; font-weight: 700; font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #444; border-bottom: 2px solid #4CAF50; padding-bottom: 8px; font-size: 1rem; font-weight: 500; margin-bottom: 15px; }
+        
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .input-row input[type="text"] { flex: 6; margin-bottom: 0; } 
+        .input-row input[type="date"] { flex: 1; min-width: 140px; margin-bottom: 0; }
+
+        /* 입력창 폰트 크기 축소 */
+        input, textarea { 
+            font-family: 'Noto Sans KR', sans-serif;
+            width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; outline: none; transition: border 0.3s;
+        }
+        input:focus, textarea:focus { border-color: #4CAF50; }
+        
+        textarea { resize: none; overflow-y: hidden; min-height: 100px; margin-bottom: 10px; line-height: 1.5; }
+
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        button { 
+            font-family: 'Noto Sans KR', sans-serif;
+            width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: 0.3s;
+        }
+        .btn-add { background-color: #4CAF50; color: white; margin-top: 5px; }
+        
+        .btn-toggle-filter { background-color: #607D8B; color: white; margin-bottom: 15px; width: auto; padding: 8px 20px; font-size: 0.85rem; }
+        
+        #filter-area { 
+            display: none; 
+            background-color: #eef2f3; 
+            border: 1px dashed #90a4ae;
+        }
+
+        /* 메모 아이템 내부 폰트 조정 */
+        .memo-item { 
+            background: #fffbe6; 
+            padding: 20px; 
+            border-left: 6px solid #ffc107; 
+            margin-bottom: 15px; 
+            border-radius: 8px; 
+            position: relative; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+        }
+        .edit-btn { position: absolute; top: 15px; right: 15px; width: auto; padding: 4px 10px; background: #2196F3; color: white; font-size: 0.8rem; border-radius: 4px; }
+        h4 { margin: 0 0 5px 0; color: #111; font-weight: 700; font-size: 1.1rem; }
+        small { color: #888; font-size: 0.85rem; }
+        p { margin-top: 12px; font-weight: 400; color: #333; font-size: 0.95rem; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 와이드 스마트 메모장</h2>
+
+    <div style="text-align: center;">
+        <button class="btn-toggle-filter" id="toggle-btn" onclick="toggleFilter()">
+            🔍 메모 검색/필터 열기
+        </button>
+    </div>
+
+    <div id="filter-area" class="card">
+        <h3>🔍 메모 찾기</h3>
+        <input type="text" id="search-title" placeholder="검색할 제목..." onkeyup="filterMemos()">
+        <div class="row">
+            <input type="date" id="start-date" onchange="filterMemos()">
+            <input type="date" id="end-date" onchange="filterMemos()">
+        </div>
+        <button style="background:#f44336; color:white;" onclick="resetFilter()">필터 초기화 및 닫기</button>
+    </div>
+
+    <div class="card">
+        <h3>새 메모 작성</h3>
+        <div class="input-row">
+            <input type="text" id="title" placeholder="제목">
+            <input type="date" id="date">
+        </div>
+        <textarea id="content" placeholder="내용을 입력하세요..." oninput="autoResize(this)"></textarea>
+        <button class="btn-add" onclick="addMemo()">메모 추가하기</button>
+    </div>
+
+    <div id="memo-list"></div>
+</div>
+
+<script>
+    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    function toggleFilter() {
+        const filterArea = document.getElementById('filter-area');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const currentDisplay = window.getComputedStyle(filterArea).display;
+        if (currentDisplay === 'none') {
+            filterArea.style.display = 'block';
+            toggleBtn.innerText = '🔼 필터 메뉴 닫기';
+        } else {
+            filterArea.style.display = 'none';
+            toggleBtn.innerText = '🔍 메모 검색/필터 열기';
+        }
+    }
+
+    function addMemo() {
+        const title = document.getElementById('title').value;
+        const date = document.getElementById('date').value;
+        const content = document.getElementById('content').value;
+        const contentArea = document.getElementById('content');
+
+        if (!title || !content) {
+            alert("제목과 내용을 입력해주세요!"); return;
+        }
+
+        const memoDiv = document.createElement('div');
+        memoDiv.className = 'memo-item';
+        memoDiv.setAttribute('data-title', title);
+        memoDiv.setAttribute('data-date', date);
+
+        memoDiv.innerHTML = `
+            <button class="edit-btn" onclick="editMemo(this)">수정</button>
+            <h4>${title}</h4>
+            <small>📅 ${date}</small>
+            <p style="white-space:pre-wrap;">${content}</p>
+        `;
+
+        const list = document.getElementById('memo-list');
+        list.insertBefore(memoDiv, list.firstChild);
+        
+        document.getElementById('title').value = '';
+        contentArea.value = '';
+        autoResize(contentArea); 
+        filterMemos();
+    }
+
+    function filterMemos() {
+        const searchTitle = document.getElementById('search-title').value.toLowerCase();
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        const memos = document.querySelectorAll('.memo-item');
+
+        memos.forEach(memo => {
+            const title = memo.getAttribute('data-title').toLowerCase();
+            const date = memo.getAttribute('data-date');
+            const matches = title.includes(searchTitle) && 
+                            (!startDate || date >= startDate) && 
+                            (!endDate || date <= endDate);
+            memo.style.display = matches ? 'block' : 'none';
+        });
+    }
+
+    function resetFilter() {
+        document.getElementById('search-title').value = '';
+        document.getElementById('start-date').value = '';
+        document.getElementById('end-date').value = '';
+        filterMemos();
+        toggleFilter();
+    }
+
+    function editMemo(btn) {
+        const item = btn.closest('.memo-item');
+        const contentArea = document.getElementById('content');
+        document.getElementById('title').value = item.querySelector('h4').innerText;
+        document.getElementById('date').value = item.getAttribute('data-date');
+        contentArea.value = item.querySelector('p').innerText;
+        autoResize(contentArea);
+        item.remove();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
