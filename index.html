@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 메모장(저장기능 포함)</title>
+    <title>와이드 메모장</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -17,10 +17,14 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
+            /* 기본 폰트 크기 소폭 축소 */
             font-size: 0.9rem; 
         }
         
-        .container { width: 100%; max-width: 800px; box-sizing: border-box; }
+        .container { 
+            width: 100%; 
+            box-sizing: border-box;
+        }
         
         .card { 
             background: white; 
@@ -34,26 +38,35 @@
         h3 { margin-top: 0; color: #444; border-bottom: 2px solid #4CAF50; padding-bottom: 8px; font-size: 1rem; font-weight: 500; margin-bottom: 15px; }
         
         .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .input-row input[type="text"] { flex: 6; } 
-        .input-row input[type="date"] { flex: 2; min-width: 140px; }
+        .input-row input[type="text"] { flex: 6; margin-bottom: 0; } 
+        .input-row input[type="date"] { flex: 1; min-width: 140px; margin-bottom: 0; }
 
+        /* 입력창 폰트 크기 축소 */
         input, textarea { 
             font-family: 'Noto Sans KR', sans-serif;
             width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; outline: none; transition: border 0.3s;
         }
         input:focus, textarea:focus { border-color: #4CAF50; }
+        
         textarea { resize: none; overflow-y: hidden; min-height: 100px; margin-bottom: 10px; line-height: 1.5; }
 
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        
         button { 
             font-family: 'Noto Sans KR', sans-serif;
-            padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: 0.3s;
+            width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; transition: 0.3s;
         }
-        .btn-add { background-color: #4CAF50; color: white; width: 100%; }
-        .btn-toggle-filter { background-color: #607D8B; color: white; margin-bottom: 15px; padding: 8px 20px; font-size: 0.85rem; }
+        .btn-add { background-color: #4CAF50; color: white; margin-top: 5px; }
         
-        #filter-area { display: none; background-color: #eef2f3; border: 1px dashed #90a4ae; }
+        .btn-toggle-filter { background-color: #607D8B; color: white; margin-bottom: 15px; width: auto; padding: 8px 20px; font-size: 0.85rem; }
+        
+        #filter-area { 
+            display: none; 
+            background-color: #eef2f3; 
+            border: 1px dashed #90a4ae;
+        }
 
+        /* 메모 아이템 내부 폰트 조정 */
         .memo-item { 
             background: #fffbe6; 
             padding: 20px; 
@@ -63,10 +76,7 @@
             position: relative; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
         }
-        .memo-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 5px; }
-        .edit-btn { background: #2196F3; color: white; font-size: 0.75rem; padding: 4px 8px; }
-        .del-btn { background: #f44336; color: white; font-size: 0.75rem; padding: 4px 8px; }
-
+        .edit-btn { position: absolute; top: 15px; right: 15px; width: auto; padding: 4px 10px; background: #2196F3; color: white; font-size: 0.8rem; border-radius: 4px; }
         h4 { margin: 0 0 5px 0; color: #111; font-weight: 700; font-size: 1.1rem; }
         small { color: #888; font-size: 0.85rem; }
         p { margin-top: 12px; font-weight: 400; color: #333; font-size: 0.95rem; line-height: 1.6; }
@@ -75,7 +85,7 @@
 <body>
 
 <div class="container">
-    <h2>A Course of Miracle</h2>
+    <h2>📝 와이드 스마트 메모장</h2>
 
     <div style="text-align: center;">
         <button class="btn-toggle-filter" id="toggle-btn" onclick="toggleFilter()">
@@ -86,15 +96,15 @@
     <div id="filter-area" class="card">
         <h3>🔍 메모 찾기</h3>
         <input type="text" id="search-title" placeholder="검색할 제목..." onkeyup="filterMemos()">
-        <div class="row" style="margin-top:10px;">
+        <div class="row">
             <input type="date" id="start-date" onchange="filterMemos()">
             <input type="date" id="end-date" onchange="filterMemos()">
         </div>
-        <button style="background:#78909c; color:white; width:100%; margin-top:10px;" onclick="resetFilter()">필터 초기화 및 닫기</button>
+        <button style="background:#f44336; color:white;" onclick="resetFilter()">필터 초기화 및 닫기</button>
     </div>
 
     <div class="card">
-        <h3>오늘의 연습서</h3>
+        <h3>새 메모 작성</h3>
         <div class="input-row">
             <input type="text" id="title" placeholder="제목">
             <input type="date" id="date">
@@ -107,11 +117,7 @@
 </div>
 
 <script>
-    // 페이지 로드 시 실행
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('date').value = new Date().toISOString().substring(0, 10);
-        loadMemos();
-    });
+    document.getElementById('date').value = new Date().toISOString().substring(0, 10);
 
     function autoResize(textarea) {
         textarea.style.height = 'auto';
@@ -121,117 +127,82 @@
     function toggleFilter() {
         const filterArea = document.getElementById('filter-area');
         const toggleBtn = document.getElementById('toggle-btn');
-        const isHidden = window.getComputedStyle(filterArea).display === 'none';
-        
-        filterArea.style.display = isHidden ? 'block' : 'none';
-        toggleBtn.innerText = isHidden ? '🔼 필터 메뉴 닫기' : '🔍 메모 검색/필터 열기';
+        const currentDisplay = window.getComputedStyle(filterArea).display;
+        if (currentDisplay === 'none') {
+            filterArea.style.display = 'block';
+            toggleBtn.innerText = '🔼 필터 메뉴 닫기';
+        } else {
+            filterArea.style.display = 'none';
+            toggleBtn.innerText = '🔍 메모 검색/필터 열기';
+        }
     }
 
-    // 메모 추가 및 저장
     function addMemo() {
         const title = document.getElementById('title').value;
         const date = document.getElementById('date').value;
         const content = document.getElementById('content').value;
+        const contentArea = document.getElementById('content');
 
         if (!title || !content) {
             alert("제목과 내용을 입력해주세요!"); return;
         }
 
-        const newMemo = { id: Date.now(), title, date, content };
-        const memos = getMemosFromStorage();
-        memos.unshift(newMemo); // 최신글이 위로
-        saveMemosToStorage(memos);
+        const memoDiv = document.createElement('div');
+        memoDiv.className = 'memo-item';
+        memoDiv.setAttribute('data-title', title);
+        memoDiv.setAttribute('data-date', date);
 
-        renderMemos(memos);
-        
-        // 입력창 초기화
-        document.getElementById('title').value = '';
-        document.getElementById('content').value = '';
-        document.getElementById('content').style.height = 'auto';
-    }
+        memoDiv.innerHTML = `
+            <button class="edit-btn" onclick="editMemo(this)">수정</button>
+            <h4>${title}</h4>
+            <small>📅 ${date}</small>
+            <p style="white-space:pre-wrap;">${content}</p>
+        `;
 
-    // 로컬 저장소에서 데이터 가져오기
-    function getMemosFromStorage() {
-        const data = localStorage.getItem('smart-memos');
-        return data ? JSON.parse(data) : [];
-    }
-
-    // 로컬 저장소에 데이터 저장
-    function saveMemosToStorage(memos) {
-        localStorage.setItem('smart-memos', JSON.stringify(memos));
-    }
-
-    // 화면에 메모 리스트 렌더링
-    function renderMemos(memos) {
         const list = document.getElementById('memo-list');
-        list.innerHTML = '';
-
-        memos.forEach(memo => {
-            const memoDiv = document.createElement('div');
-            memoDiv.className = 'memo-item';
-            memoDiv.setAttribute('data-id', memo.id);
-            memoDiv.innerHTML = `
-                <div class="memo-actions">
-                    <button class="edit-btn" onclick="editMemo(${memo.id})">수정</button>
-                    <button class="del-btn" onclick="deleteMemo(${memo.id})">삭제</button>
-                </div>
-                <h4>${memo.title}</h4>
-                <small>📅 ${memo.date}</small>
-                <p style="white-space:pre-wrap;">${memo.content}</p>
-            `;
-            list.appendChild(memoDiv);
-        });
-    }
-
-    function loadMemos() {
-        renderMemos(getMemosFromStorage());
-    }
-
-    function deleteMemo(id) {
-        if(confirm("정말 삭제하시겠습니까?")) {
-            const memos = getMemosFromStorage().filter(m => m.id !== id);
-            saveMemosToStorage(memos);
-            renderMemos(memos);
-        }
-    }
-
-    function editMemo(id) {
-        const memos = getMemosFromStorage();
-        const memo = memos.find(m => m.id === id);
+        list.insertBefore(memoDiv, list.firstChild);
         
-        document.getElementById('title').value = memo.title;
-        document.getElementById('date').value = memo.date;
-        document.getElementById('content').value = memo.content;
-        
-        // 수정할 데이터를 리스트에서 제거 후 다시 저장
-        const updatedMemos = memos.filter(m => m.id !== id);
-        saveMemosToStorage(updatedMemos);
-        renderMemos(updatedMemos);
-        
-        autoResize(document.getElementById('content'));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('title').value = '';
+        contentArea.value = '';
+        autoResize(contentArea); 
+        filterMemos();
     }
 
     function filterMemos() {
         const searchTitle = document.getElementById('search-title').value.toLowerCase();
         const startDate = document.getElementById('start-date').value;
         const endDate = document.getElementById('end-date').value;
-        
-        const memos = getMemosFromStorage();
-        const filtered = memos.filter(memo => {
-            const matchesTitle = memo.title.toLowerCase().includes(searchTitle);
-            const matchesDate = (!startDate || memo.date >= startDate) && 
-                                (!endDate || memo.date <= endDate);
-            return matchesTitle && matchesDate;
+        const memos = document.querySelectorAll('.memo-item');
+
+        memos.forEach(memo => {
+            const title = memo.getAttribute('data-title').toLowerCase();
+            const date = memo.getAttribute('data-date');
+            const matches = title.includes(searchTitle) && 
+                            (!startDate || date >= startDate) && 
+                            (!endDate || date <= endDate);
+            memo.style.display = matches ? 'block' : 'none';
         });
-        
-        renderMemos(filtered);
     }
 
     function resetFilter() {
         document.getElementById('search-title').value = '';
         document.getElementById('start-date').value = '';
         document.getElementById('end-date').value = '';
-        loadMemos();
+        filterMemos();
         toggleFilter();
     }
+
+    function editMemo(btn) {
+        const item = btn.closest('.memo-item');
+        const contentArea = document.getElementById('content');
+        document.getElementById('title').value = item.querySelector('h4').innerText;
+        document.getElementById('date').value = item.getAttribute('data-date');
+        contentArea.value = item.querySelector('p').innerText;
+        autoResize(contentArea);
+        item.remove();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
