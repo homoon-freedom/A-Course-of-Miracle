@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary-color: #4CAF50; --accent-color: #9C27B0; --gray-color: #607D8B; --danger-color: #f44336; }
+        :root { --primary-color: #4CAF50; --accent-color: #9C27B0; --gray-color: #607D8B; --danger-color: #f44336; --edit-color: #2196F3; }
         body { 
             font-family: 'Noto Sans KR', sans-serif; background-color: #f4f4f9; 
             padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; font-size: 0.9rem; 
@@ -32,12 +32,14 @@
         .setting-row input, .setting-row select { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
 
         input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; margin-bottom: 10px; }
-        textarea { min-height: 100px; line-height: 1.5; resize: none; }
+        /* overflow:hidden을 추가하여 자동 조절 시 스크롤바가 튀는 현상을 방지합니다 */
+        textarea { min-height: 100px; line-height: 1.5; resize: none; overflow: hidden; }
         
         button { font-family: inherit; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s; }
         .btn-add { background-color: var(--primary-color); color: white; padding: 12px; width: 100%; font-size: 1rem; }
+        .btn-edit-confirm { background-color: var(--edit-color); color: white; padding: 12px; width: 100%; font-size: 1rem; }
+        .btn-cancel { background-color: #eee; color: #333; padding: 8px; width: 100%; margin-top: 5px; font-size: 0.85rem; }
         
-        /* 알림 실행 버튼 스타일 */
         .btn-run-alarm { background-color: var(--accent-color); color: white; padding: 10px; width: 100%; margin-top: 10px; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-run-alarm.active { background-color: var(--danger-color); }
 
@@ -45,8 +47,8 @@
         .btn-group { position: absolute; top: 12px; right: 12px; display: flex; gap: 5px; }
         .btn-sm { padding: 5px 10px; font-size: 0.75rem; color: white; border-radius: 4px; }
         .del-btn { background: var(--danger-color); }
+        .edit-btn { background: var(--edit-color); }
         
-        /* 알림 가동 중 뱃지 */
         .running-badge { display: inline-block; background: #e1bee7; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; margin-bottom: 8px; font-weight: bold; animation: pulse 2s infinite; }
         
         @keyframes pulse {
@@ -61,7 +63,7 @@
 <body>
 
 <div id="permission-banner" onclick="requestPermission()">
-    📍 아이폰 잠금화면 알림을 위해 여기를 눌러 권한을 허용하세요.
+    아이폰 잠금화면 알림을 위해 여기를 눌러 권한을 허용하세요.
 </div>
 
 <div class="container">
@@ -91,10 +93,13 @@
     </div>
 
     <div class="card">
-        <h3>✍️ 오늘의 연습서</h3>
+        <h3 id="input-title">✍️ 오늘의 연습서</h3>
         <input type="text" id="title" placeholder="제목 (예: 제 1과)">
-        <textarea id="content" placeholder="기억할 문장을 입력하세요..."></textarea>
-        <button class="btn-add" onclick="addMemo()">연습서 등록</button>
+        <textarea id="content" placeholder="기억할 문장을 입력하세요..." oninput="autoResize(this)"></textarea>
+        
+        <div id="action-buttons">
+            <button id="submit-btn" class="btn-add" onclick="handleMemoSubmit()">연습서 등록</button>
+        </div>
         
         <button id="run-alarm-btn" class="btn-run-alarm" onclick="toggleAlarmRunning()">
             <span>🔔 알림 실행하기</span>
@@ -108,6 +113,7 @@
     let memoData = JSON.parse(localStorage.getItem('memos')) || [];
     let isAlarmRunning = JSON.parse(localStorage.getItem('isAlarmRunning')) || false;
     let lastNotifiedTime = null;
+    let editId = null;
 
     window.onload = () => {
         if (Notification.permission !== "granted") {
@@ -117,6 +123,12 @@
         renderMemos();
         setInterval(checkAlarmSystem, 30000); 
     };
+
+    // [추가] 텍스트 입력창 높이 자동 조절 함수
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
 
     function toggleSettings() {
         const settings = document.getElementById('alarm-settings');
@@ -140,7 +152,7 @@
         updateAlarmBtnUI();
         
         if(isAlarmRunning) {
-            alert("알림 시스템이 가동되었습니다. 지정된 시간에 첫 번째 메모가 발송됩니다.");
+            alert("알림 시스템이 가동되었습니다.");
         }
     }
 
@@ -153,28 +165,84 @@
             btn.classList.remove('active');
             btn.innerHTML = '<span>🔔 알림 실행하기</span>';
         }
-        renderMemos(); // 리스트에 뱃지 표시 업데이트
+        renderMemos();
     }
 
-    function addMemo() {
-        const title = document.getElementById('title').value;
-        const content = document.getElementById('content').value;
-        if (!title || !content) return alert("내용을 입력하세요.");
+    function handleMemoSubmit() {
+        const titleInput = document.getElementById('title');
+        const contentInput = document.getElementById('content');
+        
+        if (!titleInput.value || !contentInput.value) return alert("내용을 입력하세요.");
 
-        const newMemo = {
-            id: Date.now(),
-            title,
-            content,
-            date: new Date().toLocaleDateString()
-        };
-        memoData.unshift(newMemo);
+        if (editId === null) {
+            const newMemo = {
+                id: Date.now(),
+                title: titleInput.value,
+                content: contentInput.value,
+                date: new Date().toLocaleDateString()
+            };
+            memoData.unshift(newMemo);
+        } else {
+            memoData = memoData.map(m => m.id === editId ? { 
+                ...m, 
+                title: titleInput.value, 
+                content: contentInput.value 
+            } : m);
+            cancelEdit();
+        }
+
         saveAndRender();
+        titleInput.value = '';
+        contentInput.value = '';
+        contentInput.style.height = '100px'; // 등록 후 높이 초기화
+    }
+
+    function startEdit(id) {
+        const memo = memoData.find(m => m.id === id);
+        if (!memo) return;
+
+        editId = id;
+        const titleInput = document.getElementById('title');
+        const contentInput = document.getElementById('content');
+        
+        titleInput.value = memo.title;
+        contentInput.value = memo.content;
+        document.getElementById('input-title').innerText = "🔄 연습서 수정 중";
+        
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.innerText = "수정 완료";
+        submitBtn.className = "btn-edit-confirm";
+
+        if (!document.getElementById('cancel-btn')) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.id = 'cancel-btn';
+            cancelBtn.className = 'btn-cancel';
+            cancelBtn.innerText = '수정 취소';
+            cancelBtn.onclick = cancelEdit;
+            document.getElementById('action-buttons').appendChild(cancelBtn);
+        }
+
+        autoResize(contentInput); // 내용을 불러온 후 높이 조절
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+        editId = null;
+        const contentInput = document.getElementById('content');
         document.getElementById('title').value = '';
-        document.getElementById('content').value = '';
+        contentInput.value = '';
+        contentInput.style.height = '100px'; // 초기화
+        document.getElementById('input-title').innerText = "✍️ 오늘의 연습서";
+        
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.innerText = "연습서 등록";
+        submitBtn.className = "btn-add";
+
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) cancelBtn.remove();
     }
 
     function checkAlarmSystem() {
-        // 알림 실행 상태일 때만 작동
         if (!isAlarmRunning || memoData.length === 0 || Notification.permission !== "granted") return;
 
         const now = new Date();
@@ -205,12 +273,11 @@
         memoData.forEach((memo, index) => {
             const memoDiv = document.createElement('div');
             memoDiv.className = 'memo-item';
-            
-            // 첫 번째 메모이면서 알림이 가동 중일 때 뱃지 추가
             const badge = (index === 0 && isAlarmRunning) ? '<span class="running-badge">📡 알림 가동 중</span><br>' : '';
             
             memoDiv.innerHTML = `
                 <div class="btn-group">
+                    <button class="btn-sm edit-btn" onclick="startEdit(${memo.id})">수정</button>
                     <button class="btn-sm del-btn" onclick="deleteMemo(${memo.id})">삭제</button>
                 </div>
                 ${badge}
@@ -235,6 +302,7 @@
                 localStorage.setItem('isAlarmRunning', false);
                 updateAlarmBtnUI();
             }
+            if (editId === id) cancelEdit();
             saveAndRender();
         }
     }
