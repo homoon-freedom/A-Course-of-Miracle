@@ -34,7 +34,8 @@
         #book-title-input:read-only { color: #7f8c8d; cursor: default; border-bottom-color: transparent; }
 
         .content-area {
-            width: 100%; max-width: 800px; margin-top: 110px; margin-bottom: 70px;
+            width: 100%; max-width: 800px; margin-top: 110px; 
+            margin-bottom: 95px; /* 플로팅 버튼 두께만큼 하단 여백을 70px -> 95px로 확보했습니다 */
             background: var(--page-bg); min-height: calc(100vh - 180px);
             box-shadow: 0 0 20px rgba(0,0,0,0.05); padding: 40px 30px; box-sizing: border-box;
         }
@@ -75,9 +76,23 @@
         
         .quote-highlight { color: var(--accent-color); font-weight: 800; font-style: italic; }
 
+        /* 하단 네비게이션 바: 하단 띄움 및 라운드 처리 */
         .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; height: 55px; background: #2c3e50;
-            display: flex; align-items: center; justify-content: space-between; z-index: 1000;
+            position: fixed; 
+            bottom: 16px; /* 화면 맨 밑에서 16px 띄움 */
+            left: 50%;
+            transform: translateX(-50%); /* 가로 중앙 정렬 */
+            width: calc(100% - 32px); /* 좌우 여백 */
+            max-width: 740px; /* 본문 스케일에 맞는 안정적인 너비 제한 */
+            height: 55px; 
+            background: #2c3e50;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            z-index: 1000;
+            border-radius: 16px; /* 모서리를 둥글게 */
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); /* 입체감을 주는 부드러운 그림자 */
+            overflow: hidden; /* 내부 버튼 오버플로우 잘라내기 */
         }
         
         .nav-btn { 
