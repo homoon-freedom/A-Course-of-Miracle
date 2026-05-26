@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>교과서(기적수업)</title>
-    <!-- html2canvas 라이브러리 -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <!-- Supabase JS 라이브러리 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -35,7 +33,7 @@
 
         .content-area {
             width: 100%; max-width: 800px; margin-top: 110px; 
-            margin-bottom: 95px; /* 플로팅 버튼 두께만큼 하단 여백을 70px -> 95px로 확보했습니다 */
+            margin-bottom: 95px; /* 플로팅 버튼 두께만큼 하단 여백 확보 */
             background: var(--page-bg); min-height: calc(100vh - 180px);
             box-shadow: 0 0 20px rgba(0,0,0,0.05); padding: 40px 30px; box-sizing: border-box;
         }
@@ -49,22 +47,22 @@
             outline: none;
         }
         
-        /* ### 대제목 (글자 크기를 1.6em -> 1.4em으로 줄였습니다) */
+        /* 대제목 */
         .header-big { 
             display: block; 
-            font-size: 1.4em; /* 더 줄이고 싶다면 1.3em 등으로 숫자를 낮추세요 */
+            font-size: 1.4em; 
             font-weight: 900; 
             margin-top: 1em; margin-bottom: 0.5em; color: #111; line-height: 1.2;
         }
 
-        /* ## 중제목 (초록색 바) */
+        /* 중제목 (초록색 바) */
         .header-mid { 
             display: block; font-size: 1.25em; font-weight: 800; 
             margin-top: 1.2em; margin-bottom: 0.6em; color: #1a252f; 
             border-left: 5px solid var(--accent-color); padding-left: 12px; line-height: 1.4; 
         }
 
-        /* # 소제목 */
+        /* 소제목 */
         .header-small { 
             display: block; font-size: 1.1em; font-weight: 800; 
             margin-top: 1em; margin-bottom: 0.4em; color: #34495e; line-height: 1.4;
@@ -81,20 +79,20 @@
         /* 하단 네비게이션 바: 하단 띄움 및 라운드 처리 */
         .bottom-nav {
             position: fixed; 
-            bottom: 16px; /* 화면 맨 밑에서 16px 띄움 */
+            bottom: 16px; 
             left: 50%;
-            transform: translateX(-50%); /* 가로 중앙 정렬 */
-            width: calc(100% - 32px); /* 좌우 여백 */
-            max-width: 740px; /* 본문 스케일에 맞는 안정적인 너비 제한 */
+            transform: translateX(-50%); 
+            width: calc(100% - 32px); 
+            max-width: 740px; 
             height: 55px; 
             background: #2c3e50;
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
             z-index: 1000;
-            border-radius: 16px; /* 모서리를 둥글게 */
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); /* 입체감을 주는 부드러운 그림자 */
-            overflow: hidden; /* 내부 버튼 오버플로우 잘라내기 */
+            border-radius: 16px; 
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); 
+            overflow: hidden; 
         }
         
         .nav-btn { 
@@ -222,8 +220,25 @@
                 document.getElementById('editor-surface').style.fontSize = fontSize + 'px';
             }
 
-            // 가장 최근에 업데이트된 책 데이터를 Supabase에서 가져와 시작 페이지로 설정
+            // 마지막으로 보던 글의 ID가 로컬에 남아있는지 확인
+            const lastViewedId = localStorage.getItem('last_viewed_book_id');
+
             try {
+                if (lastViewedId) {
+                    // 마지막으로 보던 글이 있으면 해당 글을 Supabase에서 우선 호출
+                    const { data, error } = await supabaseClient
+                        .from('acim_text_book')
+                        .select('*')
+                        .eq('id', lastViewedId)
+                        .single();
+
+                    if (data && !error) {
+                        loadBookData(data);
+                        return; // 로딩에 성공하면 초기화 로직 종료
+                    }
+                }
+
+                // 마지막으로 보던 글이 없거나 Supabase에서 찾을 수 없다면, 가장 최근에 업데이트된 글을 가져옴
                 const { data, error } = await supabaseClient
                     .from('acim_text_book')
                     .select('*')
@@ -357,6 +372,8 @@
                     hiddenZone.appendChild(cardWrapper);
                 });
 
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 listContainer.innerHTML = ""; 
                 const cards = hiddenZone.querySelectorAll('.share-card');
 
@@ -402,7 +419,6 @@
             }
         }
 
-        // [Supabase] 데이터 저장 처리 (업서트)
         async function saveCurrentBook() {
             const titleInput = document.getElementById('book-title-input');
             const title = titleInput.value.trim() || "제목 없음";
@@ -414,7 +430,6 @@
                 rawContent = document.getElementById('editor-surface').innerText;
             }
             
-            // Supabase 테이블에 Upsert (동일 id가 있으면 수정, 없으면 추가)
             const { error } = await supabaseClient
                 .from('acim_text_book')
                 .upsert({
@@ -430,14 +445,17 @@
             }
             
             currentBookId = id; 
+            
+            // 글 저장 성공 시 마지막으로 보던 글 기록에 ID 반영
+            localStorage.setItem('last_viewed_book_id', id);
+
             document.title = title + " - 교과서(기적수업)";
             
             setMode(false); 
             showToast();
         }
 
-        // [Supabase] 특정 단건 데이터 가져오기 호출부
-        async function loadBook(id) {
+        async function loadBook(id, closeModalFlag = true) {
             const { data, error } = await supabaseClient
                 .from('acim_text_book')
                 .select('*')
@@ -450,24 +468,25 @@
             }
 
             if (data) {
-                loadBookData(data);
+                loadBookData(data, closeModalFlag);
             }
         }
 
-        // 순수 데이터 매핑용 분리 함수
-        function loadBookData(book) {
+        function loadBookData(book, closeModalFlag = true) {
             currentBookId = book.id; 
             rawContent = book.content || ""; 
+            
+            // 글을 전환하여 조회하는 순간 마지막으로 본 페이지 ID를 업데이트
+            localStorage.setItem('last_viewed_book_id', book.id);
             
             const title = book.title || "제목 없음";
             document.getElementById('book-title-input').value = title;
             document.title = title + " - 교과서(기적수업)"; 
             
             setMode(false); 
-            closeModals();
+            if (closeModalFlag) closeModals();
         }
 
-        // [Supabase] 내 서재 목록 갱신 및 오픈
         async function openLibrary() {
             const listContainer = document.getElementById('book-list');
             listContainer.innerHTML = '<div style="padding:15px; color:#999; text-align:center;">📚 클라우드 서재 불러오는 중...</div>';
@@ -489,7 +508,7 @@
                 listContainer.innerHTML = '<div style="padding:15px; color:#999; text-align:center;">서재가 비어 있습니다.</div>';
             } else {
                 listContainer.innerHTML = data.map(b => `
-                    <div class="book-item" onclick="loadBook('${b.id}')">
+                    <div class="book-item" onclick="loadBook('${b.id}', true)">
                         <span class="book-item-title">📘 ${b.title}</span>
                         <button class="delete-btn" onclick="deleteBook('${b.id}', event)">❌</button>
                     </div>
@@ -497,7 +516,6 @@
             }
         }
 
-        // [Supabase] 특정 글 삭제 처리
         async function deleteBook(id, event) {
             event.stopPropagation(); 
             if (!confirm("이 책을 클라우드 서재에서 정말 삭제하시겠습니까?")) return;
@@ -512,22 +530,38 @@
                 return;
             }
 
+            // 현재 보고 있던 페이지를 삭제한 경우 처리
             if (currentBookId === id) {
-                // 삭제 후 남은 글 중 최신 글을 가져오거나 새 글 작성화면 표시
-                const { data } = await supabaseClient.from('acim_text_book').select('id').order('updated_at', { ascending: false }).limit(1);
+                localStorage.removeItem('last_viewed_book_id'); // 보던 페이지 정보 삭제
+                
+                const { data } = await supabaseClient
+                    .from('acim_text_book')
+                    .select('id')
+                    .order('updated_at', { ascending: false })
+                    .limit(1);
+
                 if (data && data.length > 0) {
-                    loadBook(data[0].id);
+                    await loadBook(data[0].id, false);
                 } else {
-                    createNewBook();
+                    currentBookId = null; 
+                    rawContent = ""; 
+                    document.getElementById('book-title-input').value = ""; 
+                    document.getElementById('editor-surface').innerText = ""; 
+                    document.title = "새 글 작성 - 교과서(기적수업)"; 
+                    setMode(true); 
                 }
-            } else {
-                openLibrary(); 
             }
+            
+            openLibrary(); 
         }
 
         function createNewBook() { 
             currentBookId = null; 
             rawContent = ""; 
+            
+            // 새 글 작성 시 마지막으로 보던 특정 페이지 기록 제거
+            localStorage.removeItem('last_viewed_book_id');
+
             document.getElementById('book-title-input').value = ""; 
             document.getElementById('editor-surface').innerText = ""; 
             document.title = "새 글 작성 - 교과서(기적수업)"; 
