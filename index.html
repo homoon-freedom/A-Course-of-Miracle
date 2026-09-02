@@ -242,7 +242,7 @@
         async function shareCapturedFiles() {
             if (!globalGeneratedFiles.length) return alert("생성된 이미지 파일이 존재하지 않습니다.");
             if (navigator.share && navigator.canShare({ files: globalGeneratedFiles })) {
-                try { await navigator.share({ files: globalGeneratedFiles, title: '기록 공유' }); } 
+                try { await navigator.share({ files: globalGeneratedFiles }); } 
                 catch (err) { if(err.name !== 'AbortError') alert("기기 공유 실패: 이미지를 길게 눌러 수동 저장해 주세요."); }
             } else { alert("이 브라우저는 자동 파일 공유 기능을 지원하지 않습니다. 띄워진 이미지를 꾹 눌러 저장해 주세요."); }
         }
@@ -279,7 +279,6 @@
             setMode(false); if (closeModalFlag) closeModals();
         }
 
-        // 카테고리 여닫기(보이기/숨기기) 토글 함수
         function toggleCategory(headerElement) {
             const itemsBox = headerElement.nextElementSibling;
             const arrow = headerElement.querySelector('.category-arrow');
@@ -308,7 +307,6 @@
             $('book-list').innerHTML = Object.keys(groups).sort().map(catName => {
                 groups[catName].sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: 'base' }));
                 
-                // ★ [기능 수정] 타이틀 클릭 시 toggleCategory 실행되도록 이벤트 바인딩 및 화살표 가이드(▼) 추가
                 return `<div class="category-group">` +
                     `<div class="category-title" onclick="toggleCategory(this)"><span>📂 ${catName}</span><span class="category-arrow">▼</span></div>` +
                     `<div class="category-items">` +
