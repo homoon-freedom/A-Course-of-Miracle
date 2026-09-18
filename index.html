@@ -37,9 +37,12 @@
         .header-small { display: block; font-size: 1.1em; font-weight: 800; margin: 1em 0 0.4em; color: #34495e; line-height: 1.4; }
         .bullet-line { display: block; padding-left: 5px; margin-bottom: 0.4em; }
         .quote-line { display: block; color: #7f8c8d; font-style: italic; border-left: 3px solid #ecf0f1; padding-left: 15px; margin: 0.5em 0; }
+        
+        /* 텍스트 강조 스타일들 */
         .bold-text { font-weight: 800; color: #1a252f; } 
         .bracket-highlight { color: var(--bracket-color); font-weight: 600; }
-        .quote-highlight { color: var(--accent-color); font-weight: 800; font-style: italic; }
+        .double-quote-highlight { color: var(--accent-color); font-weight: 800; } /* "와" 사이: 녹색 굵게 */
+        .single-quote-highlight { font-weight: 800; } /* '와' 사이: 색상 유지 굵게 */
 
         .bottom-nav {
             position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 740px; height: 55px; background: #2c3e50;
@@ -156,9 +159,22 @@
         function parseMarkdown(text) {
             if (!text) return "";
             return text.split('\n').map(line => {
-                let p = line.replace(/\*\*(.*?)\*\*/g, '<span class="bold-text">$1</span>')
-                            .replace(/\((.*?)\)/g, '<span class="bracket-highlight">($1)</span>')
-                            .replace(/“(.*?)”/g, '“<span class="quote-highlight">$1</span>”');
+                // HTML 태그 충돌을 방지하기 위해 특수 기호(Placeholder) 치환 방식을 사용합니다.
+                let p = line
+                    .replace(/\*\*(.*?)\*\*/g, '@@B_S@@$1@@B_E@@')
+                    .replace(/\((.*?)\)/g, '@@P_S@@($1)@@P_E@@')
+                    .replace(/(["“])(.*?)(["”])/g, '$1@@DQ_S@@$2@@DQ_E@@$3')
+                    .replace(/(['‘])(.*?)(['’])/g, '$1@@SQ_S@@$2@@SQ_E@@$3');
+
+                // 예약해둔 Placeholder를 실제 span 태그로 변경합니다.
+                p = p.replace(/@@B_S@@/g, '<span class="bold-text">')
+                     .replace(/@@B_E@@/g, '</span>')
+                     .replace(/@@P_S@@/g, '<span class="bracket-highlight">')
+                     .replace(/@@P_E@@/g, '</span>')
+                     .replace(/@@DQ_S@@/g, '<span class="double-quote-highlight">')
+                     .replace(/@@DQ_E@@/g, '</span>')
+                     .replace(/@@SQ_S@@/g, '<span class="single-quote-highlight">')
+                     .replace(/@@SQ_E@@/g, '</span>');
                 
                 const trimmed = p.trim();
                 if (trimmed.startsWith('###')) return `<span class="header-big">${p.replace(/^###\s*/, '')}</span>`;
@@ -202,8 +218,7 @@
             $('hidden-capture-zone').innerHTML = "";
             globalGeneratedFiles = [];
 
-            $('share-modal').style.display = 'block';
-            $('overlay').style.display = 'block';
+            $('share-modal').style.display = 'block';$('overlay').style.display = 'block';
 
             const allLines = rawContent.split('\n');
             const size = Math.ceil(allLines.length / 3);
@@ -295,7 +310,7 @@
 
         async function openLibrary() {
             $('book-list').innerHTML = '<div style="padding:15px; color:#999; text-align:center;">📚 클라우드 서재 불러오는 중...</div>';
-            $('library-modal').style.display = $('overlay').style.display = 'block';
+            $('library-modal').style.display =$('overlay').style.display = 'block';
 
             const { data, error } = await supabaseClient.from('acim_text_book').select('id, title, category, updated_at');
             if (error) return $('book-list').innerHTML = `<div style="padding:15px; color:red; text-align:center;">에러: ${error.message}</div>`;
@@ -337,7 +352,7 @@
         
         function adjustFont(v) { $('editor-surface').style.fontSize = (fontSize += (v*2)) + 'px'; localStorage.setItem('eb_font_size', fontSize); }
         function closeModals() { document.querySelectorAll('.modal, .modal-overlay').forEach(el => el.style.display = 'none'); }
-        function showToast() { $('save-toast').style.display = 'block'; setTimeout(() => $('save-toast').style.display = 'none', 1500); }
+        function showToast() { $('save-toast').style.display = 'block'; setTimeout(() =>$('save-toast').style.display = 'none', 1500); }
         
         init();
     </script>
