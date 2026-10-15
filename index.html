@@ -308,7 +308,7 @@
             }
         }
 
-        async function openLibrary() {
+async function openLibrary() {
             $('book-list').innerHTML = '<div style="padding:15px; color:#999; text-align:center;">📚 클라우드 서재 불러오는 중...</div>';
             $('library-modal').style.display =$('overlay').style.display = 'block';
 
@@ -322,9 +322,10 @@
             $('book-list').innerHTML = Object.keys(groups).sort().map(catName => {
                 groups[catName].sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: 'base' }));
                 
+                // 💡 변경된 부분: category-arrow를 '▲'로 설정하고, category-items에 style="display: none;"을 적용합니다.
                 return `<div class="category-group">` +
-                    `<div class="category-title" onclick="toggleCategory(this)"><span>📂 ${catName}</span><span class="category-arrow">▼</span></div>` +
-                    `<div class="category-items">` +
+                    `<div class="category-title" onclick="toggleCategory(this)"><span>📂 ${catName}</span><span class="category-arrow" style="transform: rotate(-90deg);">▲</span></div>` +
+                    `<div class="category-items" style="display: none;">` +
                     groups[catName].map(b => `<div class="book-item" onclick="loadBook('${b.id}', true)"><span class="book-item-title">📄 ${b.title}</span><button class="delete-btn" onclick="deleteBook('${b.id}', event)">❌</button></div>`).join('') +
                     `</div></div>`;
             }).join('');
