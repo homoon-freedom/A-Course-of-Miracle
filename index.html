@@ -20,16 +20,16 @@
             width: 100%; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             display: flex; flex-direction: column; padding: 12px 20px; box-sizing: border-box; position: fixed; top: 0; z-index: 1000; gap: 8px;
         }
-        .inputs-row { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
-        .inputs-row input { border: none; font-weight: bold; outline: none; background: transparent; padding-bottom: 4px; }
-        .inputs-row input:read-only { color: #7f8c8d; cursor: default; border-bottom-color: transparent !important; }
         
-        /* 3단 분류 입력창 레이아웃 수정 (Flex 사용) */
-        #book-category-input, #book-subcategory-input { flex: 0 0 22%; font-size: 14px; border-bottom: 1px solid #e2e8f0; color: var(--accent-color); }
-        #book-title-input { flex: 1; font-size: 18px; border-bottom: 1px solid #f1f3f5; }
+        /* 대/중분류 & 제목 입력창 레이아웃 (두 줄 배치) */
+        .inputs-row { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 5px; }
+        .cat-inputs { display: flex; gap: 8px; width: 100%; }
+        .cat-inputs input { flex: 1; min-width: 0; font-size: 13px; border: none; border-bottom: 1px solid #e2e8f0; color: var(--accent-color); font-weight: bold; outline: none; background: transparent; padding-bottom: 4px; }
+        #book-title-input { width: 100%; font-size: 18px; border: none; border-bottom: 1px solid #f1f3f5; font-weight: bold; outline: none; background: transparent; padding-bottom: 4px; margin-top: 2px; }
+        .inputs-row input:read-only { color: #7f8c8d; cursor: default; border-bottom-color: transparent !important; }
 
         .content-area {
-            width: 100%; max-width: 800px; margin: 130px 0 95px; background: var(--page-bg); 
+            width: 100%; max-width: 800px; margin: 145px 0 95px; background: var(--page-bg); 
             min-height: calc(100vh - 200px); box-shadow: 0 0 20px rgba(0,0,0,0.05); padding: 40px 30px; box-sizing: border-box;
         }
         .render-box { line-height: 1.8; word-wrap: break-word; word-break: break-all; white-space: pre-wrap; text-align: left; outline: none; }
@@ -68,7 +68,7 @@
 
         .save-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #2ecc71; color: white; padding: 10px 25px; border-radius: 30px; display: none; z-index: 3000; }
         
-        /* 3단 폴더형 레이아웃 스타일 */
+        /* 서재 내 폴더형 레이아웃 스타일 */
         .category-group { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #fff; }
         .category-title { background: #f1f5f9; padding: 12px 15px; font-weight: bold; font-size: 15px; color: #334155; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; transition: background 0.2s; }
         .category-title:hover { background: #e2e8f0; }
@@ -96,9 +96,11 @@
             </div>
         </div>
         <div class="inputs-row">
-            <input type="text" id="book-category-input" placeholder="대분류">
-            <input type="text" id="book-subcategory-input" placeholder="중분류">
-            <input type="text" id="book-title-input" placeholder="글 제목 (소분류)">
+            <div class="cat-inputs">
+                <input type="text" id="book-category-input" placeholder="대분류">
+                <input type="text" id="book-subcategory-input" placeholder="중분류">
+            </div>
+            <input type="text" id="book-title-input" placeholder="글 제목을 입력하세요">
         </div>
     </div>
 
@@ -166,7 +168,7 @@
             return text.split('\n').map(line => {
                 let p = line
                     .replace(/\*\*(.*?)\*\*/g, '@@B_S@@$1@@B_E@@')
-                    .replace(/\*(.*?):/g, '*@@B_S@@$1@@B_E@@:') // 💡 *와 : 사이의 글씨를 굵게 변환
+                    .replace(/\*(.*?):/g, '*@@B_S@@$1@@B_E@@:') // *와 : 사이 굵게 처리
                     .replace(/\((.*?)\)/g, '@@P_S@@($1)@@P_E@@')
                     .replace(/(["“])(.*?)(["”])/g, '$1@@DQ_S@@$2@@DQ_E@@$3')
                     .replace(/(['‘])(.*?)(['’])/g, '$1@@SQ_S@@$2@@SQ_E@@$3');
@@ -216,9 +218,9 @@
             if (isEditMode) rawContent = $('editor-surface').innerText;
             if (!rawContent.trim()) return alert("공유할 내용이 없습니다.");
 
-            const cat = $('book-category-input').value.trim();
-            const subcat = $('book-subcategory-input').value.trim();
-            const combinedCat = [cat, subcat].filter(Boolean).join(' / ');
+            const cat1 = $('book-category-input').value.trim();
+            const cat2 = $('book-subcategory-input').value.trim();
+            const combinedCat = [cat1, cat2].filter(Boolean).join(' / ');
             const fullTitle = combinedCat ? `[${combinedCat}] ${$('book-title-input').value || '나의 기록'}` : ($('book-title-input').value || '나의 기록');
             
             $('share-cards-list').innerHTML = "<div style='text-align:center; padding:20px; width:100%; color:#666;'>⏳ 고화질 카드 이미지 생성 중...</div>";
@@ -270,9 +272,9 @@
         }
 
         async function saveCurrentBook() {
-            const cat = $('book-category-input').value.trim() || "미분류";
-            const subcat = $('book-subcategory-input').value.trim() || "일반";
-            const combinedCategory = cat + " / " + subcat; 
+            const cat1 = $('book-category-input').value.trim() || "미분류";
+            const cat2 = $('book-subcategory-input').value.trim() || "일반";
+            const combinedCategory = `${cat1} / ${cat2}`; 
             
             const title = $('book-title-input').value.trim() || "제목 없음";
             
@@ -298,15 +300,14 @@
             currentBookId = book.id; rawContent = book.content || ""; 
             localStorage.setItem('last_viewed_book_id', book.id);
             
-            // 💡 정규식(띄어쓰기 무시)을 통해 대/중분류 분리 강화
             const fullCat = book.category || "미분류 / 일반";
             const catParts = fullCat.split(/\s*\/\s*/);
-            const cat = catParts[0] ? catParts[0].trim() : "미분류";
-            const subcat = catParts[1] ? catParts[1].trim() : "일반";
+            const cat1 = catParts[0] ? catParts[0].trim() : "미분류";
+            const cat2 = catParts[1] ? catParts[1].trim() : "일반";
 
             const title = book.title || "제목 없음";
-            $('book-category-input').value = cat; 
-            $('book-subcategory-input').value = subcat; 
+            $('book-category-input').value = cat1; 
+            $('book-subcategory-input').value = cat2; 
             $('book-title-input').value = title;
 
             document.title = `[${fullCat}] ${title} - 교과서(기적수업)`; 
@@ -338,7 +339,6 @@
             const groups = {}; 
             data.forEach(b => { 
                 const fullCat = b.category || "미분류 / 일반";
-                // 💡 분리 로직 강화
                 const catParts = fullCat.split(/\s*\/\s*/);
                 const topCat = catParts[0] ? catParts[0].trim() : "미분류";
                 const subCat = catParts[1] ? catParts[1].trim() : "일반";
@@ -354,7 +354,7 @@
                 const subCatsHtml = Object.keys(subGroups).sort().map(subCatName => {
                     const books = subGroups[subCatName];
                     books.sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: 'base' }));
-                    
+
                     return `<div class="category-title subcategory-title" onclick="toggleCategory(this)"><span>📁 ${subCatName}</span><span class="category-arrow" style="transform: rotate(-90deg);">▲</span></div>` +
                            `<div class="category-items" style="display: none;">` +
                            books.map(b => `<div class="book-item" onclick="loadBook('${b.id}', true)"><span class="book-item-title">📄 ${b.title}</span><button class="delete-btn" onclick="deleteBook('${b.id}', event)">❌</button></div>`).join('') +
@@ -362,7 +362,7 @@
                 }).join('');
 
                 return `<div class="category-group">` +
-                    `<div class="category-title" onclick="toggleCategory(this)"><span>📂 ${topCatName}</span><span class="category-arrow" style="transform: rotate(-90deg);">▲</span></div>` +
+                    `<div class="category-title" onclick="toggleCategory(this)"><span>📚 ${topCatName}</span><span class="category-arrow" style="transform: rotate(-90deg);">▲</span></div>` +
                     `<div class="category-items" style="display: none;">${subCatsHtml}</div>` +
                     `</div>`;
             }).join('');
@@ -384,7 +384,10 @@
 
         function createNewBook() { 
             currentBookId = null; rawContent = ""; localStorage.removeItem('last_viewed_book_id');
-            $('book-category-input').value = ""; $('book-subcategory-input').value = ""; $('book-title-input').value = ""; $('editor-surface').innerText = ""; 
+            $('book-category-input').value = ""; 
+            $('book-subcategory-input').value = ""; 
+            $('book-title-input').value = ""; 
+            $('editor-surface').innerText = ""; 
             document.title = "새 글 작성 - 교과서(기적수업)"; setMode(true); closeModals(); 
         }
         
