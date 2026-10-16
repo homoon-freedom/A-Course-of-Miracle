@@ -97,8 +97,12 @@
         </div>
         <div class="inputs-row">
             <div class="cat-inputs">
-                <input type="text" id="book-category-input" placeholder="대분류">
-                <input type="text" id="book-subcategory-input" placeholder="중분류">
+                <!-- datalist를 연결하여 기존 목록 선택 & 직접 입력이 모두 가능하게 구성 -->
+                <input type="text" id="book-category-input" placeholder="대분류 입력 또는 선택">
+                <datalist id="category-list"></datalist>
+
+                <input type="text" id="book-subcategory-input" placeholder="중분류 입력 또는 선택">
+                <datalist id="subcategory-list"></datalist>
             </div>
             <input type="text" id="book-title-input" placeholder="글 제목을 입력하세요">
         </div>
@@ -144,10 +148,16 @@
 
         const $ = id => document.getElementById(id);
         let currentBookId = null, isEditMode = false, fontSize = 18, rawContent = "", globalGeneratedFiles = [];
+        
+        // 카테고리 계층 데이터를 저장할 객체
+        let categoryHierarchy = {}; 
 
         async function init() {
             const savedFontSize = localStorage.getItem('eb_font_size');
             if (savedFontSize) $('editor-surface').style.fontSize = (fontSize = parseInt(savedFontSize, 10)) + 'px';
+
+            // 앱 실행 시 전체 카테고리 목록 불러오기
+            await fetchCategories();
 
             const lastViewedId = localStorage.getItem('last_viewed_book_id');
             try {
@@ -161,6 +171,53 @@
                 if (res.data) loadBookData(Array.isArray(res.data) ? res.data[0] : res.data);
                 else createNewBook();
             } catch (err) { console.error(err); createNewBook(); }
+
+            // 이벤트 리스너: 대분류 입력/선택 시 해당 대분류에 맞는 중분류 목록 갱신
+            $('book-category-input').addEventListener('input', updateSubcategoryDatalist);$('book-category-input').addEventListener('focus', updateSubcategoryDatalist);
+        }
+
+        // 전체 책 데이터를 조회하여 카테고리 계층(대분류-중분류) 수집
+        async function fetchCategories() {
+            const { data, error } = await supabaseClient.from('acim_text_book').select('category');
+            if (error || !data) return;
+            
+            categoryHierarchy = {};
+            data.forEach(b => {
+                const fullCat = b.category || "미분류 / 일반";
+                const catParts = fullCat.split(/\s*\/\s*/);
+                const cat1 = catParts[0] ? catParts[0].trim() : "미분류";
+                const cat2 = catParts[1] ? catParts[1].trim() : "일반";
+                
+                if (!categoryHierarchy[cat1]) categoryHierarchy[cat1] = new Set();
+                categoryHierarchy[cat1].add(cat2);
+            });
+            updateCategoryDatalist();
+        }
+
+        // 대분류 드롭다운(datalist) 렌더링
+        function updateCategoryDatalist() {
+            const catList = $('category-list');
+            catList.innerHTML = '';
+            Object.keys(categoryHierarchy).sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                catList.appendChild(option);
+            });
+        }
+
+        // 선택된 대분류에 맞춰 중분류 드롭다운(datalist) 연동 렌더링
+        function updateSubcategoryDatalist() {
+            const cat1 = $('book-category-input').value.trim();
+            const subcatList = $('subcategory-list');
+            subcatList.innerHTML = '';
+            
+            if (categoryHierarchy[cat1]) {
+                Array.from(categoryHierarchy[cat1]).sort().forEach(subcat => {
+                    const option = document.createElement('option');
+                    option.value = subcat;
+                    subcatList.appendChild(option);
+                });
+            }
         }
 
         function parseMarkdown(text) {
@@ -168,7 +225,7 @@
             return text.split('\n').map(line => {
                 let p = line
                     .replace(/\*\*(.*?)\*\*/g, '@@B_S@@$1@@B_E@@')
-                    .replace(/\*(.*?):/g, '*@@B_S@@$1@@B_E@@:') // *와 : 사이 굵게 처리
+                    .replace(/\*(.*?):/g, '*@@B_S@@$1@@B_E@@:') 
                     .replace(/\((.*?)\)/g, '@@P_S@@($1)@@P_E@@')
                     .replace(/(["“])(.*?)(["”])/g, '$1@@DQ_S@@$2@@DQ_E@@$3')
                     .replace(/(['‘])(.*?)(['’])/g, '$1@@SQ_S@@$2@@SQ_E@@$3');
@@ -205,10 +262,18 @@
             if (isEditMode) {
                 $('editor-surface').innerText = rawContent;
                 $('editor-surface').focus();
+                
+                // 편집 모드일 때만 자동완성 목록 연결
+                $('book-category-input').setAttribute('list', 'category-list');$('book-subcategory-input').setAttribute('list', 'subcategory-list');
+
                 Object.assign($('edit-mode-btn').style, { background: "#f1c40f", color: "#2c3e50", fontWeight: "bold" });
                 Object.assign($('read-mode-btn').style, { background: "transparent", color: "#718096", fontWeight: "normal" });
             } else {
                 $('editor-surface').innerHTML = parseMarkdown(rawContent);
+                
+                // 읽기 모드일 때는 브라우저 기본 드롭다운 뜨지 않도록 리스트 속성 제거
+                $('book-category-input').removeAttribute('list');$('book-subcategory-input').removeAttribute('list');
+
                 Object.assign($('read-mode-btn').style, { background: "var(--accent-color)", color: "#ffffff", fontWeight: "bold" });
                 Object.assign($('edit-mode-btn').style, { background: "transparent", color: "#718096", fontWeight: "normal" });
             }
@@ -284,6 +349,9 @@
             const { error } = await supabaseClient.from('acim_text_book').upsert({ id, title, category: combinedCategory, content: rawContent, updated_at: new Date().toISOString() });
             if (error) return alert("Supabase 저장에 실패했습니다: " + error.message);
             
+            // 저장 후 드롭다운 목록 업데이트 (새 카테고리가 있을 수 있으므로)
+            await fetchCategories();
+            
             currentBookId = id; 
             localStorage.setItem('last_viewed_book_id', id);
             document.title = `[${combinedCategory}] ${title} - 교과서(기적수업)`;
@@ -309,6 +377,9 @@
             $('book-category-input').value = cat1; 
             $('book-subcategory-input').value = cat2; 
             $('book-title-input').value = title;
+
+            // 목록 데이터도 업데이트
+            updateSubcategoryDatalist();
 
             document.title = `[${fullCat}] ${title} - 교과서(기적수업)`; 
             setMode(false); if (closeModalFlag) closeModals();
@@ -373,6 +444,8 @@
             const { error } = await supabaseClient.from('acim_text_book').delete().eq('id', id);
             if (error) return alert("삭제에 실패했습니다: " + error.message);
 
+            await fetchCategories(); // 목록 갱신
+
             if (currentBookId === id) {
                 localStorage.removeItem('last_viewed_book_id');
                 const { data } = await supabaseClient.from('acim_text_book').select('id').order('updated_at', { ascending: false }).limit(1);
@@ -388,6 +461,10 @@
             $('book-subcategory-input').value = ""; 
             $('book-title-input').value = ""; 
             $('editor-surface').innerText = ""; 
+            
+            // 새 글 작성 시 중분류 목록 초기화
+            updateSubcategoryDatalist();
+
             document.title = "새 글 작성 - 교과서(기적수업)"; setMode(true); closeModals(); 
         }
         
